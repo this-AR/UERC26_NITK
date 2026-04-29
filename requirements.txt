@@ -1,0 +1,9 @@
+torch
+torchvision
+numpy
+scikit-learn
+scipy
+matplotlib
+namegenerator
+tqdm
+opencv-python

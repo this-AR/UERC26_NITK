@@ -2,6 +2,8 @@ import os
 import csv
 import pathlib
 import random
+import cv2
+import numpy as np
 from PIL import Image
 
 from torch.utils.data import Dataset
@@ -158,7 +160,9 @@ class UERCDataset(UERCBaseDataset):
             for img_name in self.images:
                 img_path = os.path.join(self.root_dir, img_name)
                 image = Image.open(img_path).convert('RGB')
-
+                image = np.array(image)
+                image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_LINEAR)
+                # store as numpy array
                 self.preloaded_images[img_name] = image
 
     def __len__(self):
@@ -173,7 +177,7 @@ class UERCDataset(UERCBaseDataset):
         img_path = os.path.join(self.root_dir, img_name)
 
         if self.preload_images:
-            image = self.preloaded_images[img_name]
+            image = Image.fromarray(self.preloaded_images[img_name])
         else:
             image = Image.open(img_path).convert('RGB')
 

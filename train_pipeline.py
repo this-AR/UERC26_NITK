@@ -62,10 +62,11 @@ class EarIdentificationDataset(Dataset):
     """
     
     def __init__(self, split, root_dir, split_csv='dataset_split.csv',
-                 classes_mapping=None, is_train=True):
+                 classes_mapping=None, is_train=True, preload_images=False):
         self.root_dir = root_dir
         self.split = split
         self.is_train = is_train
+        self.preload_images = preload_images
         
         # Read split CSV to get images for this split
         self.images = []
@@ -100,11 +101,24 @@ class EarIdentificationDataset(Dataset):
         # Build labels
         self.labels = [self.classes_mapping[os.path.dirname(img)] 
                        for img in self.images]
+                       
+        self.preloaded_images = {}
+        if self.preload_images:
+            print(f"  Preloading {len(self.images)} images to RAM for {self.split} split...")
+            for img_name in tqdm(self.images, desc=f"Preloading {self.split}", leave=False):
+                img_path = os.path.join(self.root_dir, img_name)
+                image = cv2.imread(img_path)
+                if image is not None:
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_LINEAR)
+                    self.preloaded_images[img_name] = image
+                else:
+                    print(f"Warning: Could not read {img_path} during preloading.")
         
         # Transforms
         if is_train:
             self.transform = transforms.Compose([
-                transforms.Resize(256),
+                *([] if self.preload_images else [transforms.Resize(256)]),
                 transforms.RandomRotation(30),
                 transforms.CenterCrop(224),
                 transforms.RandomHorizontalFlip(p=0.5),
@@ -117,7 +131,7 @@ class EarIdentificationDataset(Dataset):
             ])
         else:
             self.transform = transforms.Compose([
-                transforms.Resize(256),
+                *([] if self.preload_images else [transforms.Resize(256)]),
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], 
@@ -128,13 +142,17 @@ class EarIdentificationDataset(Dataset):
         return len(self.images)
     
     def __getitem__(self, idx):
-        img_path = os.path.join(self.root_dir, self.images[idx])
+        img_name = self.images[idx]
         
-        # Load with OpenCV for preprocessing
-        image = cv2.imread(img_path)
-        if image is None:
-            raise FileNotFoundError(f"Cannot read image: {img_path}")
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        if self.preload_images and img_name in self.preloaded_images:
+            image = self.preloaded_images[img_name]
+        else:
+            img_path = os.path.join(self.root_dir, img_name)
+            # Load with OpenCV for preprocessing
+            image = cv2.imread(img_path)
+            if image is None:
+                raise FileNotFoundError(f"Cannot read image: {img_path}")
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # --- Ear preprocessing ---
         # 1. Always normalize ear side
@@ -509,8 +527,8 @@ def train_one_epoch(model, loss_head, optimizer, dataloader, device, epoch, scal
     optimizer.zero_grad()
     pbar = tqdm(dataloader, desc=f"  Epoch {epoch}", leave=False)
     for step, (images, labels) in enumerate(pbar):
-        images = images.to(device)
-        labels = labels.to(device)
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
         
         # Forward with AMP (mixed precision for ~30-40% speedup)
         with torch.cuda.amp.autocast(enabled=use_amp):
@@ -556,6 +574,10 @@ def main():
                         choices=['vits14', 'vitb14'],
                         help='DINOv2 backbone: vits14 (21M, recommended) or vitb14 (86M, if vits14 underperforms)')
     
+    # Preloading
+    parser.add_argument('--preload_images', action='store_true',
+                        help='Preload all images to RAM for faster training')
+    
     # Training
     parser.add_argument('--epochs', type=int, default=80,
                         help='Total training epochs (default: 80)')
@@ -599,6 +621,9 @@ def main():
     
     # Device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        print("cuDNN benchmark: ENABLED")
     print(f"\n{'='*60}")
     print(f"UERC26 DINOv2 + AdaFace Training Pipeline")
     print(f"{'='*60}")
@@ -621,7 +646,8 @@ def main():
     
     train_dataset = EarIdentificationDataset(
         split='train', root_dir=args.data_root,
-        split_csv=args.split_csv, is_train=True
+        split_csv=args.split_csv, is_train=True,
+        preload_images=args.preload_images
     )
     print(f"Train: {len(train_dataset)} images, {train_dataset.num_classes} subjects")
     
@@ -629,17 +655,19 @@ def main():
         split='val', root_dir=args.data_root,
         split_csv=args.split_csv,
         classes_mapping=train_dataset.classes_mapping,
-        is_train=False
+        is_train=False, preload_images=args.preload_images
     )
     print(f"Val:   {len(val_dataset)} images")
     
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
-        num_workers=args.num_workers, pin_memory=True, drop_last=True
+        num_workers=args.num_workers, pin_memory=True, drop_last=True,
+        persistent_workers=True, prefetch_factor=3
     )
     val_loader = DataLoader(
         val_dataset, batch_size=args.batch_size, shuffle=False,
-        num_workers=args.num_workers, pin_memory=True
+        num_workers=args.num_workers, pin_memory=True,
+        persistent_workers=True, prefetch_factor=3
     )
     
     # Pairwise datasets for verification evaluation
@@ -700,6 +728,22 @@ def main():
     best_epoch = 0
     
     for epoch in range(1, args.epochs + 1):
+        if epoch == 1:
+            import time
+            data_times, gpu_times = [], []
+            end = time.time()
+            for i, (imgs, lbls) in enumerate(train_loader):
+                data_times.append(time.time() - end)
+                t = time.time()
+                imgs = imgs.to(device, non_blocking=True)
+                lbls = lbls.to(device, non_blocking=True)
+                gpu_times.append(time.time() - t)
+                end = time.time()
+                if i >= 19: break
+            print(f"  [TIMING] Avg data load: {sum(data_times)/len(data_times)*1000:.1f}ms | "
+                  f"Avg GPU transfer: {sum(gpu_times)/len(gpu_times)*1000:.1f}ms")
+            print(f"  [TIMING] Target: data load << 50ms per batch")
+            
         # === PHASED UNFREEZING ===
         # Use raw_model for unfreezing (DataParallel wraps the model)
         if epoch == 1:
@@ -764,7 +808,8 @@ def main():
             if val_pair_dataset is not None:
                 val_pair_loader = DataLoader(
                     val_pair_dataset, batch_size=args.batch_size,
-                    shuffle=False, num_workers=args.num_workers
+                    shuffle=False, num_workers=args.num_workers,
+                    persistent_workers=True, prefetch_factor=3
                 )
                 val_metrics = evaluate_verification(model, val_pair_loader, device)
                 print(f"  VAL  | VER@0.1%: {val_metrics['VER@0.1%']*100:.2f}% | "
@@ -776,7 +821,8 @@ def main():
             if test_pair_dataset is not None:
                 test_pair_loader = DataLoader(
                     test_pair_dataset, batch_size=args.batch_size,
-                    shuffle=False, num_workers=args.num_workers
+                    shuffle=False, num_workers=args.num_workers,
+                    persistent_workers=True, prefetch_factor=3
                 )
                 test_metrics = evaluate_verification(model, test_pair_loader, device)
                 print(f"  TEST | VER@0.1%: {test_metrics['VER@0.1%']*100:.2f}% | "

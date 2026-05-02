@@ -57,7 +57,6 @@ def build_loaders(data_dir, img_size, batch_size, val_split, workers, seed):
     train_tf = transforms.Compose([
         transforms.Resize((img_size + 32, img_size + 32)),
         transforms.RandomCrop(img_size),
-        transforms.RandomHorizontalFlip(),          # helps generalisation
         transforms.ColorJitter(0.3, 0.3, 0.3, 0.05),
         transforms.RandomRotation(10),
         transforms.ToTensor(),

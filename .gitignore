@@ -1,0 +1,6 @@
+UERC26_data/
+SUBMISSIONS/
+raw_embeddings_output/
+__pycache__/
+ev.md
+PIPELINE_GUIDE.md

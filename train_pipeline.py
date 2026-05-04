@@ -27,6 +27,7 @@ import json
 import numpy as np
 from PIL import Image
 import cv2
+from pathlib import Path
 cv2.setNumThreads(0)  # VERY IMPORTANT: Prevents OpenCV from freezing/thrashing inside PyTorch DataLoader workers
 
 import torch
@@ -34,6 +35,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import torchvision.transforms.v2 as v2
 from tqdm import tqdm
 
 from ear_preprocessing import normalize_ear_side, apply_clahe, apply_sharpening
@@ -104,38 +106,25 @@ class EarIdentificationDataset(Dataset):
                        
         self.preloaded_images = {}
         if self.preload_images:
-            print(f"  Preloading {len(self.images)} images to RAM for {self.split} split...")
+            print(f"  Preloading {len(self.images)} images (WebP bytes) to RAM for {self.split} split...")
             for img_name in tqdm(self.images, desc=f"Preloading {self.split}", leave=False):
-                img_path = os.path.join(self.root_dir, img_name)
-                image = cv2.imread(img_path)
-                if image is not None:
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    image = cv2.resize(image, (256, 256), interpolation=cv2.INTER_LINEAR)
-                    self.preloaded_images[img_name] = image
+                img_path = str(Path(self.root_dir) / img_name)
+                img_path = str(Path(img_path).with_suffix('.webp'))
+                
+                if os.path.exists(img_path):
+                    with open(img_path, 'rb') as f:
+                        self.preloaded_images[img_name] = f.read()
                 else:
                     print(f"Warning: Could not read {img_path} during preloading.")
         
-        # Transforms
+        # Transforms (minimal CPU work, just to tensor)
         if is_train:
             self.transform = transforms.Compose([
-                *([] if self.preload_images else [transforms.Resize(256)]),
-                transforms.RandomRotation(30),
-                transforms.CenterCrop(224),
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.ColorJitter(brightness=0.4, contrast=0.4, 
-                                       saturation=0.4, hue=0.1),
-                transforms.RandomGrayscale(p=0.2),  # Don't rely on skin color
                 transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], 
-                                     [0.229, 0.224, 0.225]),
             ])
         else:
             self.transform = transforms.Compose([
-                *([] if self.preload_images else [transforms.Resize(256)]),
-                transforms.CenterCrop(224),
                 transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], 
-                                     [0.229, 0.224, 0.225]),
             ])
     
     def __len__(self):
@@ -145,9 +134,12 @@ class EarIdentificationDataset(Dataset):
         img_name = self.images[idx]
         
         if self.preload_images and img_name in self.preloaded_images:
-            image = self.preloaded_images[img_name]
+            img_bytes = self.preloaded_images[img_name]
+            image = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
-            img_path = os.path.join(self.root_dir, img_name)
+            img_path = str(Path(self.root_dir) / img_name)
+            img_path = str(Path(img_path).with_suffix('.webp'))
             # Load with OpenCV for preprocessing
             image = cv2.imread(img_path)
             if image is None:
@@ -155,8 +147,7 @@ class EarIdentificationDataset(Dataset):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # --- Ear preprocessing ---
-        # 1. Always normalize ear side
-        image = normalize_ear_side(image, target_side='right')
+        # 1. Ear side is ALREADY normalized offline! We skip it here.
         
         # 2. Random CLAHE (training only)
         if self.is_train and random.random() < 0.5:
@@ -209,17 +200,15 @@ class EarPairwiseDataset(Dataset):
         return len(self.pairs)
     
     def __getitem__(self, idx):
-        img1_path = os.path.join(self.root_dir, self.pairs[idx][0])
-        img2_path = os.path.join(self.root_dir, self.pairs[idx][1])
+        img1_path = str(Path(self.root_dir) / self.pairs[idx][0]).rsplit('.', 1)[0] + '.webp'
+        img2_path = str(Path(self.root_dir) / self.pairs[idx][1]).rsplit('.', 1)[0] + '.webp'
         
         # Load and preprocess both images
         img1 = cv2.imread(img1_path)
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
-        img1 = normalize_ear_side(img1, target_side='right')
         
         img2 = cv2.imread(img2_path)
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
-        img2 = normalize_ear_side(img2, target_side='right')
         
         img1 = Image.fromarray(img1)
         img2 = Image.fromarray(img2)
@@ -526,9 +515,23 @@ def train_one_epoch(model, loss_head, optimizer, dataloader, device, epoch, scal
     
     optimizer.zero_grad()
     pbar = tqdm(dataloader, desc=f"  Epoch {epoch}", leave=False)
+    
+    # Define GPU augmentations using v2
+    gpu_transform = v2.Compose([
+        v2.RandomRotation(30),
+        v2.CenterCrop(224),
+        v2.RandomHorizontalFlip(p=0.5),
+        v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+        v2.RandomGrayscale(p=0.2),
+        v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+    
     for step, (images, labels) in enumerate(pbar):
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
+        
+        # Apply transforms on GPU
+        images = gpu_transform(images)
         
         # Forward with AMP (mixed precision for ~30-40% speedup)
         with torch.cuda.amp.autocast(enabled=use_amp):
@@ -563,7 +566,7 @@ def main():
     parser = argparse.ArgumentParser(description='UERC26 DINOv2 + AdaFace Training')
     
     # Data
-    parser.add_argument('--data_root', type=str, default='UERC26_data/data/public',
+    parser.add_argument('--data_root', type=str, default='UERC26_data/data/public_webp',
                         help='Path to public dataset root')
     parser.add_argument('--split_csv', type=str, default='dataset_split.csv')
     
@@ -579,8 +582,8 @@ def main():
                         help='Preload all images to RAM for faster training')
     
     # Training
-    parser.add_argument('--epochs', type=int, default=80,
-                        help='Total training epochs (default: 80)')
+    parser.add_argument('--epochs', type=int, default=35,
+                        help='Total training epochs (default: 35)')
     parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch size (default: 64, reduce if OOM)')
     parser.add_argument('--lr', type=float, default=1e-3,
@@ -603,14 +606,14 @@ def main():
                         help='AdaFace quality sensitivity (0.333 recommended)')
     
     # Phased unfreezing schedule
-    parser.add_argument('--phase1_epochs', type=int, default=10,
-                        help='Epochs with frozen backbone (default: 10)')
-    parser.add_argument('--phase2_epochs', type=int, default=40,
-                        help='Epochs with last 4 blocks unfrozen (default: 40)')
+    parser.add_argument('--phase1_epochs', type=int, default=5,
+                        help='Epochs with frozen backbone (default: 5)')
+    parser.add_argument('--phase2_epochs', type=int, default=15,
+                        help='Epochs with last 4 blocks unfrozen (default: 15)')
     # Phase 3 = remaining epochs with full backbone unfrozen
     
     # Evaluation
-    parser.add_argument('--eval_every', type=int, default=5,
+    parser.add_argument('--eval_every', type=int, default=1,
                         help='Evaluate verification every N epochs')
     
     # Output
@@ -726,6 +729,8 @@ def main():
     os.makedirs(args.save_dir, exist_ok=True)
     best_auc = 0.0
     best_epoch = 0
+    patience_counter = 0
+    patience_limit = 7
     
     for epoch in range(1, args.epochs + 1):
         if epoch == 1:
@@ -805,6 +810,7 @@ def main():
             print(f"\n  --- Evaluation at epoch {epoch} ---")
             
             # Validation verification
+            current_auc = 0.0
             if val_pair_dataset is not None:
                 val_pair_loader = DataLoader(
                     val_pair_dataset, batch_size=args.batch_size,
@@ -816,6 +822,7 @@ def main():
                       f"VER@1%: {val_metrics['VER@1%']*100:.2f}% | "
                       f"EER: {val_metrics['EER']*100:.2f}% | "
                       f"AUC: {val_metrics['AUC']*100:.2f}%")
+                current_auc = val_metrics['AUC']
             
             # Test verification
             if test_pair_dataset is not None:
@@ -830,22 +837,33 @@ def main():
                       f"EER: {test_metrics['EER']*100:.2f}% | "
                       f"AUC: {test_metrics['AUC']*100:.2f}%")
                 
-                # Save best model based on AUC
-                current_auc = test_metrics['AUC']
-                if current_auc > best_auc:
-                    best_auc = current_auc
-                    best_epoch = epoch
-                    save_path = os.path.join(args.save_dir, 'best_model.pt')
-                    torch.save({
-                        'epoch': epoch,
-                        'model_state_dict': raw_model.state_dict(),
-                        'loss_head_state_dict': loss_head.state_dict(),
-                        'metrics': test_metrics,
-                        'model_stats': raw_model.get_model_stats(),
-                        'embedding_dim': args.embedding_dim,
-                        'backbone': args.backbone,
-                    }, save_path)
-                    print(f"  \u2605 NEW BEST! AUC={best_auc*100:.2f}% saved to {save_path}")
+                # If there's no val dataset, use test_auc for early stopping
+                if val_pair_dataset is None:
+                    current_auc = test_metrics['AUC']
+            
+            # Save best model based on AUC and handle Early Stopping
+            if current_auc > best_auc:
+                best_auc = current_auc
+                best_epoch = epoch
+                patience_counter = 0
+                save_path = os.path.join(args.save_dir, 'best_model.pt')
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': raw_model.state_dict(),
+                    'loss_head_state_dict': loss_head.state_dict(),
+                    'val_auc': best_auc,
+                    'model_stats': raw_model.get_model_stats(),
+                    'embedding_dim': args.embedding_dim,
+                    'backbone': args.backbone,
+                }, save_path)
+                print(f"  \u2605 NEW BEST! AUC={best_auc*100:.2f}% saved to {save_path}")
+            else:
+                patience_counter += 1
+                print(f"  No improvement. Patience: {patience_counter}/{patience_limit}")
+            
+            if patience_counter >= patience_limit:
+                print(f"\n[!] Early stopping triggered at epoch {epoch} (no improvement for {patience_limit} epochs).")
+                break
             
             print()
         

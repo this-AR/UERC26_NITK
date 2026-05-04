@@ -35,20 +35,26 @@ def detect_ear_side(image_np):
     
     How it works:
         1. Convert to grayscale
-        2. Apply Sobel filter in the X direction (horizontal edges)
-        3. Compare absolute edge energy on left half vs right half
-        4. The half with MORE edge energy has the ear's outer helix
+        2. Crop the image to the central 60% to ignore hair, background, and padding artifacts.
+        3. Apply Sobel filter in the X direction (horizontal edges)
+        4. Compare absolute edge energy on left half vs right half
+        5. The half with MORE edge energy has the ear's outer helix
     """
     gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
     
+    # Crop the central 60% of the image to ignore background, hair, and black padding edges
+    h, w = gray.shape
+    cy, cx = int(h * 0.2), int(w * 0.2)
+    gray_cropped = gray[cy:h-cy, cx:w-cx]
+    
     # Apply Gaussian blur to reduce noise before edge detection
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    gray_blurred = cv2.GaussianBlur(gray_cropped, (9, 9), 0)
     
     # Sobel in X direction — detects vertical edges (the helix is a vertical curve)
-    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=5)
+    sobel_x = cv2.Sobel(gray_blurred, cv2.CV_64F, 1, 0, ksize=5)
     
-    h, w = gray.shape
-    mid = w // 2
+    ch, cw = gray_blurred.shape
+    mid = cw // 2
     
     # Compare edge energy on each half
     left_energy = np.abs(sobel_x[:, :mid]).sum()

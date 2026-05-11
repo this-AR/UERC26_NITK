@@ -52,6 +52,7 @@ class CustomUERCPairwiseDataset(UERCPairwiseDataset):
         # Convert BGR to RGB — NO CLAHE for pairwise evaluation
         # (matches notebook's EarPairwiseDataset exactly).
         # Model's forward() handles resize to 224x224 via F.interpolate.
+        raw = cv2.resize(raw, (224, 224))
         image = cv2.cvtColor(raw, cv2.COLOR_BGR2RGB)
         return self._norm(_np_to_tensor(image))
 

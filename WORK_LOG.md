@@ -125,3 +125,35 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
   - Not pushed: the pair-score files (`*.txt`/`*.txtf`, up to 2.7 GB) and `NITJ.FA` (260 MB, over GitHub's 100 MB limit). Both were deleted locally, since they can be regenerated with the run command above.
   - Also deleted: the embedding caches in `analysis/embeddings/` and `NITJ/embeddings_final.npy`, the duplicate script copies in each `run/`, and `run_swinv2.log`.
 - **Next:** the user may want the t-SNE and UBEAR analysis repeated with the new model, as metrics only.
+
+## 2026-10-22 · 11. Clean-up and codebase restructure
+- **Space:** results went from 87 MB to 5.9 MB.
+  - Deleted: FA/FR lists, intermediate `.dat` files (CRR, GIBA, histograms), `id_map.tsv`, global-mean vectors, `max_min.log`, every embedding cache, and the old `dt2_tools/`, `analysis/`, `dt2_results*/` folders.
+  - Kept: metric text files (`.sts`, `run_info.txt`, `cross_check.txt`, `summary.txt`, `report.txt`, JSON), images, and `<KEY>_FAR_FRR_Data.dat` (the ROC data needed for the combined ROC).
+- **New layout** (see `README.md`). Data folders and weights did not move.
+
+  | Old | New |
+  |---|---|
+  | `dt2_tools/datasets.py`, `models.py`, `analysis_common.py` | `ear_eval/datasets.py`, `models.py`, `embeddings.py` (+ new `config.py`, `metrics.py`, `plotting.py`) |
+  | `dt2_tools/run_all.sh`, `make_scores.py`, `extras.py` | `pipeline/run_matching.sh`, `make_scores.py`, `postprocess.py` |
+  | `dt2_tools/model_metrics.py`, `compile_model_comparison.py`, `tsne_plots.py`, `ubear_failure_analysis.py` | `experiments/model_metrics.py`, `compare_models.py`, `tsne_plots.py`, `ubear_failure_analysis.py` |
+  | `dt2_tools/finalize.py` (relocation + zips) | removed (no longer needed) |
+  | `scripts_d_t_2 (Matching Results)/scripts_d_t_2 (Matching Results)/` | `matching_scripts/` (unchanged contents) |
+  | `dt2_tools/env.sh`, `bin/` | `tools/env.sh`, `tools/bin/` |
+  | root `evaluate*.py`, `extract_features.py`, `score.py`, `uerc26_*.py` | `legacy/uerc26_starter/`, `legacy/evaluate_pairs_csv.py` |
+  | `*/itw_full_pair_evaluation/evaluate_itw_all_pairs.py`, `awe_result/evaluate_awe.py`, `ubear_results/evaluate_cropped_img.py` | `legacy/full_pair_eval/evaluate_all_pairs.py`, `evaluate_awe.py`, `evaluate_ubear.py` (outputs now go to `results/legacy/<dataset>/`) |
+  | `dt2_results/combined/` | `results/tinyvit/` |
+  | `dt2_results_swinv2/<KEY>/run/<KEY>/` | `results/swinv2/<KEY>/` (flat) |
+  | `analysis/{tsne,ubear}`, `analysis/*.json`, `analysis/README.md` | `results/analysis/tinyvit/{tsne,ubear}`, `results/analysis/*.json`, `results/analysis/README.md` |
+  | `results_*.md` | `results/results_*.md` |
+
+- **Code changes:**
+  - Every path is now in `ear_eval/config.py`.
+  - The metric code that had been copied into three scripts is now one module, `ear_eval/metrics.py`.
+  - The pipeline writes to `results/<model>/<KEY>/_work/` and tidies itself, keeping only metrics and images. `DT2_KEEP_ALL=1` keeps the scratch files; `DT2_HTML=1` adds the galleries.
+  - Entry points run as modules from the project root, for example `python -m experiments.model_metrics`.
+  - Added a top-level `README.md` and `requirements.txt`.
+- **Verification:**
+  - `DT2_MODEL=swinv2 bash pipeline/run_matching.sh AWE` reproduces `AWE.sts` byte-for-byte.
+  - Swin-V2 quick metrics are identical, and every file compiles.
+  - Re-embedding TinyViT gave tiny float differences (VER@0.1 % 62.00 vs 62.04, from a different batch size), so the recorded TinyViT JSON was kept.

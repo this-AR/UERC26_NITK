@@ -6,8 +6,8 @@ import os
 import sys
 import math
 
-# Append root directory to sys.path to import uerc26_utils
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+# uerc26_utils lives in legacy/uerc26_starter
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'legacy', 'uerc26_starter')))
 from uerc26_utils import compute_metrics
 
 from model import PrunedTinyViTWrapper

@@ -1,0 +1,11 @@
+# Python 3.12, CUDA GPU. Install torch from the CUDA index:
+#   uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+torch
+torchvision
+timm
+numpy
+scipy
+scikit-learn
+opencv-python
+matplotlib
+pillow

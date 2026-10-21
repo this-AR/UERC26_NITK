@@ -11,37 +11,22 @@ Usage: python make_scores.py <AWE|ITW|NITJ|UBEAR>
 import sys
 import time
 
-import cv2
 import numpy as np
 import torch
-import torch.nn.functional as F
 
-from datasets import MODEL_DIR, WEIGHTS_PATH, discover, output_dir
+import models
+from datasets import discover, output_dir
+from models import load_image
 
-sys.path.insert(0, str(MODEL_DIR))
-from model import PrunedTinyViTWrapper  # noqa: E402
-
-IMG_SIZE = 224
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 ROW_BLOCK = 256
 DEVICE = torch.device('cuda')
 
 
-def load_image(path):
-    # Same preprocessing as the earlier evaluate_itw_all_pairs.py runs.
-    image = cv2.imread(str(path))
-    if image is None:
-        raise FileNotFoundError(f'Cannot read image: {path}')
-    image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))[:, :, ::-1]
-    return np.transpose(image.astype(np.float32) / 255.0, (2, 0, 1))
-
-
 def compute_embeddings(records):
-    model = PrunedTinyViTWrapper().model
-    model.load_state_dict(torch.load(WEIGHTS_PATH, map_location='cpu'), strict=False)
-    model = model.to(DEVICE).eval()
-    params = sum(p.numel() for p in model.parameters())
-    print(f'Model parameters: {params / 1e6:.4f} M')
+    model, weights, params = models.build()
+    print(f'Model: {weights.name} ({models.NAME}{", CLAHE" if models.CLAHE else ""}), '
+          f'parameters: {params / 1e6:.4f} M')
 
     chunks = []
     with torch.no_grad():
@@ -120,7 +105,8 @@ def main(key):
 
     with (out / 'run_info.txt').open('w') as f:
         f.write(f'dataset: {key}\n')
-        f.write(f'model: {WEIGHTS_PATH.name} ({params / 1e6:.4f} M parameters)\n')
+        f.write(f'model: {models.NAME}{" + CLAHE" if models.CLAHE else ""} '
+                f'({params / 1e6:.4f} M parameters)\n')
         f.write('pipeline: embed -> L2-normalize -> subtract global mean -> re-L2-normalize\n')
         f.write('score: dissimilarity = 1 - cosine (then max_min.sh min-max normalization)\n')
         f.write('pairs: all ordered pairs i != j (each unordered pair appears twice)\n')

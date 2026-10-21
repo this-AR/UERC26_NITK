@@ -25,4 +25,6 @@ ITW/ITW_230_split_augment/test/
 *.npy
 *.mat
 *.zip
-dt2_results/
+*.npz
+dt2_results*/
+analysis/embeddings/

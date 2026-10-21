@@ -24,7 +24,9 @@ for key in $DATASETS; do
     echo "extras started ($(date +%T))"
     $PYTHON extras.py "$key"
 done
-echo "==================== finalize ($(date +%T))"
-cd "$TOOLS"
-$PYTHON finalize.py AWE ITW UBEAR NITJ
+if [ "${DT2_FINALIZE:-1}" = 1 ]; then
+    echo "==================== finalize ($(date +%T))"
+    cd "$TOOLS"
+    $PYTHON finalize.py AWE ITW UBEAR NITJ
+fi
 echo "ALL DONE ($(date +%T))"

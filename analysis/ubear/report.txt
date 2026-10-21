@@ -1,0 +1,68 @@
+UBEAR failure analysis (mean-centred embeddings, cosine similarity, unique pairs)
+==========================================================================================
+4412 images, 126 subjects, 1296 video sequences (subject+session+side+pose)
+side L/R: 2281/2131   session 1/2: 3846/566   poses: D=745, M=1369, O=668, R=1, T=800, U=829
+
+[T0] Baseline (identity = subject, all pairs)
+     EER  23.17%  VER@0.1%  21.59%  VER@1%  36.49%  AUC 0.8516  (genuine 82494, impostor 9648172)   CRR 98.39%
+
+[T1] Left vs right ear of the same person
+     same-side genuine              n= 40853  mean 0.422 ± 0.309  vs all impostors: EER 19.09%
+     cross-side genuine (L vs R)    n= 41641  mean 0.236 ± 0.211  vs all impostors: EER 26.75%
+     impostor                       n=9648172  mean -0.003 ± 0.158
+     50.5% of all genuine pairs are cross-side
+     identity = subject+side      EER  19.16%  VER@0.1%  32.86%  VER@1%  48.58%  AUC 0.8902  (genuine 40853, impostor 9689813)   CRR 98.14%
+
+[T2] Mirror every left-ear image (horizontal flip) before embedding
+     identity = subject           EER  23.13%  VER@0.1%  22.04%  VER@1%  37.37%  AUC 0.8531  (genuine 82494, impostor 9648172)   CRR 98.25%
+     cross-side genuine mean 0.236 -> 0.250 after mirroring
+
+[T3] Session (genuine pairs, same side only, to isolate the session effect)
+     same session    n= 32753  mean 0.458 ± 0.314  EER vs impostors 17.55%
+     cross session   n=  8100  mean 0.274 ± 0.239  EER vs impostors 24.27%
+     subjects with a session-2 capture: 21 of 126
+
+[T4] Head pose (genuine pairs, same side, same session)
+     mean genuine cosine by pose pair:
+                M       U       D       T       O
+         M  0.901   0.442   0.517   0.449   0.387
+         U  0.442   0.916   0.257   0.257   0.291
+         D  0.517   0.257   0.886   0.319   0.327
+         T  0.449   0.257   0.319   0.889   0.136
+         O  0.387   0.291   0.327   0.136   0.775
+     same pose       n=  5843  mean 0.885  EER vs impostors 1.81%
+     different pose  n= 26910  mean 0.366  EER vs impostors 19.66%
+
+[T5] Near-duplicate video frames (why CRR is high while EER is high)
+     rank-1 neighbour is a frame from the SAME video sequence: 94.17% of probes
+     genuine pairs inside one sequence: n=5843, mean 0.885; genuine pairs across sequences: mean 0.285
+     CRR, gallery excludes the probe's own sequence      : 69.65% (4412 probes)
+     CRR, gallery = other session only                   : 57.13% (1136 probes)
+     CRR, gallery = opposite ear only                    : 45.44% (4395 probes)
+     verification without within-sequence pairs           : EER  24.17%  VER@0.1%  15.98%  VER@1%  31.81%  AUC 0.8405  (genuine 76651, impostor 9648172)
+
+[T6] Image quality and geometry
+     sharpness (Laplacian var)  median   231.36  [100.20 .. 431.13]  Spearman rho vs genuine score -0.281 (p=1.3e-80)
+     height (px)                median   184.00  [130.00 .. 239.00]  Spearman rho vs genuine score -0.152 (p=3.3e-24)
+     width (px)                 median   127.00  [80.00 .. 190.00]  Spearman rho vs genuine score -0.093 (p=5.0e-10)
+     aspect h/w                 median     1.50  [0.83 .. 2.33]  Spearman rho vs genuine score -0.049 (p=1.1e-03)
+     brightness                 median    70.57  [33.44 .. 165.14]  Spearman rho vs genuine score -0.220 (p=2.7e-49)
+     contrast                   median    27.77  [13.27 .. 60.22]  Spearman rho vs genuine score -0.147 (p=1.3e-22)
+     mean genuine score by sharpness quartile: Q1 0.362  Q2 0.270  Q3 0.275  Q4 0.251
+     mean genuine score by width quartile: Q1 0.278  Q2 0.324  Q3 0.309  Q4 0.246
+
+[T7] Aspect-ratio-preserving input (letterbox to square) instead of stretching to 224x224
+     letterbox                    EER  27.11%  VER@0.1%  17.00%  VER@1%  29.44%  AUC 0.8093  (genuine 82494, impostor 9648172)   CRR 98.03%
+     letterbox + mirror L         EER  26.93%  VER@0.1%  17.49%  VER@1%  29.80%  AUC 0.8115  (genuine 82494, impostor 9648172)   CRR 98.07%
+
+[T8] Hardest impostors (top 0.1% impostor scores) - shared attributes vs base rate
+     same side     top impostors  70.2%   all impostors  50.1%
+     same gender   top impostors  74.1%   all impostors  49.9%
+     same pose     top impostors  57.7%   all impostors  21.6%
+     same session  top impostors  81.5%   all impostors  77.6%
+
+[T9] Image geometry across datasets (stretch factor when resized to 224x224)
+     AWE    median size 122x63  aspect h/w median 1.94 [1.30 .. 2.85]
+     ITW    median size 63x33  aspect h/w median 1.91 [1.33 .. 2.54]
+     NITJ   median size 170x112  aspect h/w median 1.54 [0.73 .. 2.13]
+     UBEAR  median size 185x126  aspect h/w median 1.51 [0.87 .. 2.43]

@@ -49,7 +49,8 @@ DATASETS = {
 
 
 def output_dir(key):
-    return PROJECT_DIR / 'dt2_results' / key
+    from models import tag
+    return PROJECT_DIR / f'dt2_results{tag()}' / key
 
 
 def discover(key):

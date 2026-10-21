@@ -159,7 +159,8 @@ def main(key):
     ids = load_id_map(out)
     crr_rows = giba(res, key, run_dir)
     far_frr_threshold_plot(res, key, run_dir)
-    counts = galleries(res, key, ids, crr_rows)
+    # DT2_NO_HTML=1 skips the FA/FR/CRR HTML galleries (millions of entries on the big datasets).
+    counts = {} if os.environ.get('DT2_NO_HTML') == '1' else galleries(res, key, ids, crr_rows)
     check = cross_check(out, ids)
     with (out / 'cross_check.txt').open('w') as f:
         f.write(f'{key}: independent cross-check (sklearn, unique pairs i<j, cosine similarity)\n')

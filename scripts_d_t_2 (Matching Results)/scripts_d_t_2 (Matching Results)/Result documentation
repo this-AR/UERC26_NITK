@@ -1,0 +1,47 @@
+1. Finger_siamese_full
+
+Score file made on full-finger dataset present at : 
+intern@10.8.8.178/home/intern/datasets/PolyUKnuckleV1/PolyUKnuckleV1_copy/PolyUKnuckleV1_AjayJPEG
+
+2. MajorKnuckle_siamese_orig
+
+Score file made on MajorKnuckle Dataset present at : 
+intern@10.8.8.178/home/intern/datasets/PolyUKnuckleV1/PolyUKnuckleV1_copy/Segmented/Major/PolyUKnuckleV1_Segmented_Major_JPEG
+
+3. MinorKnuckle_Siamese_Orig
+
+Score file made on MajorKnuckle Dataset present at : 
+intern@10.8.8.178/home/intern/datasets/PolyUKnuckleV1/PolyUKnuckleV1_copy/Segmented/Minor/PolyUKnuckleV1_Segmented_Minor_JPEG
+
+4. Nail_siamese_orig
+
+Score file made on Nail Dataset present at : 
+terone@10.8.10.13/home/terone/Dr_Aditya_Nigam/WACV/Db_c/1/Nail_A
+
+5. RectifiedFinger_siamese_orig_Full
+
+Score file made on Finger Dataset after removing 4 classes which were found to have errors. Note that only testing was performed on 
+this rectified dataset with the model that was trained on the older dataset itself. The rectified dataset is present at :
+intern@10.8.8.178/home/intern/datasets/Full-Finger-Rectified/Test
+
+6. TeroneMajorKnuckle_siamese_orig
+
+Score file made on MajorKnuckle Dataset, which was in some way, different from the previous MajorKnuckle dataset. It is present at:
+terone@10.8.10.13/home/terone/Dr_Aditya_Nigam/WACV/Db_c/1/Major_A
+
+7. TeroneMinoKnuckle_siamese_orig
+
+Score file made on MajorKnuckle Dataset, which was in some way, different from the previous MajorKnuckle dataset. It is present at:
+terone@10.8.10.13/home/terone/Dr_Aditya_Nigam/WACV/Db_c/1/Minor_A
+
+8. Task3Finger_siamese_orig
+
+Score file made on FingerDataset which was trained on 503 classes, 1 image per class augmented to 35 with different brightness levels. It is present at terone@10.8.10.13/home/terone/Dr_Aditya_Nigam/WACV/Db_c/1/Task3Finger_siamese_orig
+
+9. Task4Finger_siamese_orig
+
+Score file made on FingerDataset which was trained on 250 classes, 2 images per class augmented to 35 but tested on all 503 classes to test generalization.
+
+
+
+

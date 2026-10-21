@@ -1,0 +1,3 @@
+#!/bin/sh
+# Minimal bc stand-in: reads expressions from stdin, supports sqrt().
+awk '{ e=$0; while (match(e, /sqrt\(([^()]*)\)/)) { inner=substr(e, RSTART+5, RLENGTH-6); cmd="awk \"BEGIN{printf \\\"%.10g\\\", sqrt(" inner ")}\""; cmd | getline v; close(cmd); e=substr(e,1,RSTART-1) v substr(e,RSTART+RLENGTH) } if (e=="quit") exit; cmd="awk \"BEGIN{printf \\\"%.10g\\n\\\", (" e ")}\""; system(cmd) }'

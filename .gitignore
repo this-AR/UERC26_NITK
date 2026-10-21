@@ -4,3 +4,25 @@ raw_embeddings_output/
 __pycache__/
 ev.md
 PIPELINE_GUIDE.md
+
+# Local ear-matching evaluation workspace: keep code only
+.venv/
+.vscode/
+*.pyc
+*.log
+# datasets (images + split/pair lists)
+*.png
+*.tiff
+*.tif
+*.jpg
+*.bmp
+*.csv
+awe/[0-9][0-9][0-9]/
+NITJ_Cropped/Cropped/
+ITW/ITW_230_split_augment/test/
+# weights, features, archives, results
+*.pt
+*.npy
+*.mat
+*.zip
+dt2_results/

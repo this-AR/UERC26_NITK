@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stand-in for the `calc` arbitrary-precision calculator used by the matching scripts.
+# Evaluates the expression with awk (supports + - * / ^ and parentheses).
+awk "BEGIN { printf \"%.10g\n\", ($*) }"

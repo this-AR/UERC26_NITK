@@ -26,5 +26,10 @@ ITW/ITW_230_split_augment/test/
 *.mat
 *.zip
 *.npz
-dt2_results*/
 analysis/embeddings/
+# result folders: only the small combined summary / ROC is versioned
+dt2_results*/*
+!dt2_results*/combined/
+# result figures are versioned (dataset images above stay ignored)
+!analysis/**/*.png
+!dt2_results*/combined/*.png

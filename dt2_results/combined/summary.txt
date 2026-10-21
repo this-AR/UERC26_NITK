@@ -1,0 +1,17 @@
+Ear matching evaluation - scripts_d_t_2 (main.sh via max_min.sh)
+Model: best_pruned_35per_tinyvit.pt (7.526 M params); embed -> L2 -> minus global mean -> L2
+Score: 1 - cosine, min-max normalized by max_min.sh; all ordered pairs i != j
+
+Dataset   Images  Subj     Genuine      Impostor     EER%    CRR%       DI     FAR%     FRR%  VER@0.1%   VER@1%      AUC
+AWE         1000   100        9000        990000    6.005   96.60   -1.913    6.005    6.022     62.00    82.33   0.9859
+ITW         1175   197        6620       1372830   10.055   78.64   -1.570   10.041   10.091     46.28    69.76   0.9622
+UBEAR       4412   126      164988      19296344   23.171   98.39   -0.734   23.168   23.175     21.59    36.49   0.8516
+NITJ       10200   510      193800     103836000   15.963   88.96   -0.708   15.949   15.975     36.60    56.56   0.9194
+
+EER/CRR/DI/FAR/FRR from the scripts (.sts); VER and AUC from cross_check.txt (sklearn).
+DI is negative because scores are dissimilarities (genuine mean < impostor mean).
+
+AWE: EER threshold 0.4917; FR 542 out of total 9000; FA 59454 out of total 990000; CRR failures 34 (out of 1000); cross-check EER 6.004%, Rank-1 96.60%
+ITW: EER threshold 0.5088; FR 666 out of total 6600; FA 137840 out of total 1372830; CRR failures 251 (out of 1175); cross-check EER 10.054%, Rank-1 79.15%
+UBEAR: EER threshold 0.5471; FR 38236 out of total 164988; FA 4470608 out of total 19296344; CRR failures 71 (out of 4412); cross-check EER 23.171%, Rank-1 98.39%
+NITJ: EER threshold 0.4956; FR 30960 out of total 193800; FA 16560528 out of total 103836000; CRR failures 1126 (out of 10200); cross-check EER 15.965%, Rank-1 88.95%

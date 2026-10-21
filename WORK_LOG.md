@@ -84,3 +84,19 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
   - NITJ: running.
 - **Instruction from the user:** metrics only. Keep one detailed metrics file and delete all intermediate files once the run finishes.
 - **Expected output:** `results_swinv2_vs_tinyvit.md`.
+
+## 2026-10-22 · 9. Housekeeping: embeddings removed, analysis results on GitHub
+- **Embeddings deleted (about 65 MB):**
+  - the CLAHE-test caches;
+  - the Swin-V2 AWE and ITW caches;
+  - the t-SNE coordinate files (`*_tsne_xy.npy`);
+  - per-dataset `embeddings_*.npy` in `dt2_results_swinv2/`.
+- **Still kept until run 8 finishes:** the TinyViT caches `analysis/embeddings/{AWE,ITW,UBEAR,NITJ}.npz` and `dt2_results_swinv2/NITJ/embeddings_final.npy`. They will be deleted afterwards.
+- **Pushed to `adi_ear_matching_eval`, same folder structure:**
+  - code;
+  - `WORK_LOG.md`;
+  - `analysis/README.md`;
+  - the t-SNE plots (`analysis/tsne/*.png`);
+  - the UBEAR analysis figures and numbers (`analysis/ubear/`);
+  - the TinyViT summary and combined ROC (`dt2_results/combined/`).
+- **`.gitignore`:** result figures are now versioned. Datasets, weights, embeddings, pair-score files and zips stay ignored.

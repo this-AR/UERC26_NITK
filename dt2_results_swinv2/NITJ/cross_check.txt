@@ -1,0 +1,11 @@
+NITJ: independent cross-check (sklearn, unique pairs i<j, cosine similarity)
+unique pairs: 52014900
+genuine: 96900
+impostor: 51918000
+EER (%): 11.133993
+VER@FAR=0.1% (%): 51.811146
+VER@FAR=1% (%): 70.028896
+AUC: 0.956743
+Rank-1 (%): 93.049020
+
+HTML galleries (html/): entries, pages

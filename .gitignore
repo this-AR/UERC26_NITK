@@ -27,9 +27,18 @@ ITW/ITW_230_split_augment/test/
 *.zip
 *.npz
 analysis/embeddings/
-# result folders: only the small combined summary / ROC is versioned
+# result folders: TinyViT keeps only combined/; Swin-V2 is versioned except oversized/duplicate files
 dt2_results*/*
 !dt2_results*/combined/
+!dt2_results_swinv2/*/
+dt2_results_swinv2/*/run/*.txt
+dt2_results_swinv2/*/run/*.txtf
+dt2_results_swinv2/*/run/*.sh
+dt2_results_swinv2/*/run/*.awk
+dt2_results_swinv2/*/run/fafrcrrhtml.py
+dt2_results_swinv2/*/run/Result documentation
+dt2_results_swinv2/NITJ/run/NITJ/NITJ.FA
 # result figures are versioned (dataset images above stay ignored)
 !analysis/**/*.png
 !dt2_results*/combined/*.png
+!dt2_results_swinv2/**/*.png

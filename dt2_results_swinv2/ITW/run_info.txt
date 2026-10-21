@@ -1,0 +1,11 @@
+dataset: ITW
+model: swinv2 (87.4317 M parameters)
+pipeline: embed -> L2-normalize -> subtract global mean -> re-L2-normalize
+score: dissimilarity = 1 - cosine (then max_min.sh min-max normalization)
+pairs: all ordered pairs i != j (each unordered pair appears twice)
+images: 1175
+subjects: 197
+ordered pairs: 1379450
+genuine pairs: 6620
+impostor pairs: 1372830
+subjects with a single image (no genuine match possible): 4 143, 153, 168, 213

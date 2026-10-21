@@ -1,0 +1,11 @@
+ITW: independent cross-check (sklearn, unique pairs i<j, cosine similarity)
+unique pairs: 689725
+genuine: 3310
+impostor: 686415
+EER (%): 7.495632
+VER@FAR=0.1% (%): 54.622356
+VER@FAR=1% (%): 78.036254
+AUC: 0.976472
+Rank-1 (%): 85.787231
+
+HTML galleries (html/): entries, pages

@@ -100,3 +100,28 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
   - the UBEAR analysis figures and numbers (`analysis/ubear/`);
   - the TinyViT summary and combined ROC (`dt2_results/combined/`).
 - **`.gitignore`:** result figures are now versioned. Datasets, weights, embeddings, pair-score files and zips stay ignored.
+
+## 2026-10-22 · 10. New model `best_model.pt` (Swin-V2-B): evaluation complete
+- **What:** the full `scripts_d_t_2` evaluation on all 4 datasets with the new model, compared against the TinyViT.
+  - Pipeline: mean-centred (embed → L2 → subtract global mean → L2), all-vs-all pairs.
+  - Run settings: `DT2_MODEL=swinv2 DT2_NO_HTML=1 DT2_FINALIZE=0 bash run_all.sh`, then `model_metrics.py` for both models, then `compile_model_comparison.py`.
+- **Main file:** `results_swinv2_vs_tinyvit.md` (all metrics, both models, both embedding variants, the NITJ right-vs-left protocol, and the deltas).
+- **Results from the scripts (EER % / CRR %):**
+
+  | Dataset | Swin-V2 EER | Swin-V2 CRR | TinyViT EER | TinyViT CRR | ΔEER (pts) |
+  |---|---|---|---|---|---|
+  | AWE | 2.645 | 99.40 | 6.005 | 96.60 | −3.36 |
+  | ITW | 7.515 | 85.62 | 10.055 | 78.64 | −2.54 |
+  | UBEAR | 18.356 | 98.93 | 23.171 | 98.39 | −4.81 |
+  | NITJ | 11.134 | 93.05 | 15.963 | 88.96 | −4.83 |
+
+  - NITJ right-ear vs left-ear protocol: EER 12.25 % (TinyViT 17.31 %), CRR 75.27 % (TinyViT 56.98 %).
+  - VER@1 % improves by 8 to 13 points; AUC improves on every dataset.
+- **Checks:**
+  - The TinyViT metrics recomputed in this run match entry 2 exactly.
+  - ITW again drops 20 duplicate-image rows in `max_min.sh`, so its CRR is 85.62 % against a sklearn Rank-1 of 85.79 %.
+- **Files:**
+  - Pushed: `dt2_results_swinv2/<KEY>/` (`.sts`, plots, CRR/hist/FAR-FRR `.dat`, `.FR`, `.FA`, `run_info`, `cross_check`, `id_map`, global mean) and `dt2_results_swinv2/combined/ROC_all_datasets.png`.
+  - Not pushed: the pair-score files (`*.txt`/`*.txtf`, up to 2.7 GB) and `NITJ.FA` (260 MB, over GitHub's 100 MB limit). Both were deleted locally, since they can be regenerated with the run command above.
+  - Also deleted: the embedding caches in `analysis/embeddings/` and `NITJ/embeddings_final.npy`, the duplicate script copies in each `run/`, and `run_swinv2.log`.
+- **Next:** the user may want the t-SNE and UBEAR analysis repeated with the new model, as metrics only.

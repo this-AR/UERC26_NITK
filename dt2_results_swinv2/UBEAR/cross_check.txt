@@ -1,0 +1,11 @@
+UBEAR: independent cross-check (sklearn, unique pairs i<j, cosine similarity)
+unique pairs: 9730666
+genuine: 82494
+impostor: 9648172
+EER (%): 18.354054
+VER@FAR=0.1% (%): 29.644580
+VER@FAR=1% (%): 47.329503
+AUC: 0.898926
+Rank-1 (%): 98.934722
+
+HTML galleries (html/): entries, pages

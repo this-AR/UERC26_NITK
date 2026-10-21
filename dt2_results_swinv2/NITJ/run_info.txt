@@ -1,0 +1,11 @@
+dataset: NITJ
+model: swinv2 (87.4317 M parameters)
+pipeline: embed -> L2-normalize -> subtract global mean -> re-L2-normalize
+score: dissimilarity = 1 - cosine (then max_min.sh min-max normalization)
+pairs: all ordered pairs i != j (each unordered pair appears twice)
+images: 10200
+subjects: 510
+ordered pairs: 104029800
+genuine pairs: 193800
+impostor pairs: 103836000
+subjects with a single image (no genuine match possible): 0

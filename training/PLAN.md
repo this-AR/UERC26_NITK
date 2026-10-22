@@ -41,6 +41,20 @@ Order: B1, B2 → F1 (quick, checks the training code) → F2 → R1, R2 → L1,
 - UBEAR test EER below the B1 baseline, and cross-video CRR up.
 - ITW, NITJ test and UERC test no more than about 0.5 EER points worse than B1 (no forgetting).
 
-## Open questions
-- DINOv3 variant and weights (gated on Hugging Face; the licence must be accepted).
-- Whether the TinyViT fine-tune on 30% of UBEAR (item 6) is still wanted on its own.
+## Data preparation (on the HPC, all CPU cores)
+1. Copy `hpc_package/ear_data.tar` (1.42 GB, built by `python -m training.pack_for_hpc`) and the code to `~/friend-gpu/`. Run `tar -xf ear_data.tar`.
+2. Run `python -m training.preprocess --root . --out data_224 --workers <cores>`.
+   - Every image becomes **224 × 224, 3-channel RGB, WebP q95**: stretched, no padding, no augmentation baked in.
+   - It writes `data_224/manifest.csv`. All training **and** evaluation read from `data_224/`, so every model sees identical inputs.
+   - Size: about 5 KB per image, about 1.4 GB in total. Checked locally on 200 images from all five datasets.
+3. Check that the image count equals the manifest rows, then delete `ear_data.tar` and the original images. Only `data_224/` stays.
+
+## Results policy (to keep HPC disk free)
+- **For every method, keep only the metrics.** One `results/<method>.md` (and/or `.txt`) per run, with the evaluation tables.
+- Delete each run's embeddings, pair-score files, FA/FR lists and plots from the HPC **as soon as its metrics file is written**.
+- Checkpoints: keep only the current best per method while it is needed for evaluation. Ask before deleting a trained model.
+- Copy the metrics files back to this repo (`results/`), add a `WORK_LOG.md` entry, and commit.
+
+## Decisions
+- **DINOv3: ViT-B/16 (86 M parameters)**, about the same size as Swin-V2-B. Its weights are gated on Hugging Face; Meta's licence must be accepted before download.
+- **Item 6** (TinyViT fine-tuned on 30% of UBEAR): only if time allows, after the runs above.

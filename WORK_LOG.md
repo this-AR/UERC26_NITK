@@ -214,3 +214,11 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
     - **L1/L2:** LoRA, Swin-V2 and DINOv3.
 - **Shared settings:** AdaFace, subject+side classes, geometric augmentation added, a 60/20/20 UERC/NITJ/UBEAR mix, bf16 within the 22 GB budget. Every model is evaluated with the same pipeline on the frozen test splits.
 - **Open:** the DINOv3 variant and weights; whether item 6 (TinyViT on 30% of UBEAR) is still wanted.
+
+## 2026-10-22 · 17. Preprocessing script; metrics-only results policy; DINOv3 choice
+- **`training/preprocess.py`:** converts every manifest image to **224 × 224 RGB WebP q95** (stretched; greyscale is copied to 3 channels; no augmentation baked in), using multiprocessing across all CPU cores. It skips files already done and writes `data_224/manifest.csv`.
+  - Checked locally on 200 images (40 per dataset): all 224×224×3, about 4–8 KB each, so the full set is about 1.4 GB.
+- **Incident:** a mistyped test command started converting the full manifest locally. I stopped it and deleted the partial output (about 245k WebP files in the scratchpad). The real preprocessing will run on the HPC's CPU cores.
+- **Results policy:** for each method, keep only a metrics md/txt file. Delete embeddings, score files and plots from the HPC as soon as metrics are written. Keep only the best checkpoint per method; ask before deleting trained models.
+- **Decisions:** DINOv3 = ViT-B/16 (86 M). Item 6 (TinyViT on 30% of UBEAR) only if time allows.
+- **Plan updated:** `training/PLAN.md` (data preparation steps, results policy).

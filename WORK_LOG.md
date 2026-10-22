@@ -157,3 +157,14 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
   - `DT2_MODEL=swinv2 bash pipeline/run_matching.sh AWE` reproduces `AWE.sts` byte-for-byte.
   - Swin-V2 quick metrics are identical, and every file compiles.
   - Re-embedding TinyViT gave tiny float differences (VER@0.1 % 62.00 vs 62.04, from a different batch size), so the recorded TinyViT JSON was kept.
+
+## 2026-10-22 · 12. UERC26 inspection, data-leakage check, retraining brainstorm
+- **UERC26 data added at `UERC26_data/data/`** (git-ignored).
+  - `public/`: 248,655 images (234,651 jpg + 14,004 png) of 1,310 subjects, 10 to 645 images each (median 150). Images are tiny web crops: median 61×31 px, h/w 1.82.
+  - Split: 1,179 subjects shared between train (179,172 images) and val (44,804); 131 subjects are test only (24,679 images). `pairs_{train,val,test}.csv` are also provided.
+  - `sequestered_anonymized/`: 1,670 unlabelled images.
+- **Leakage found:** all **1,000 AWE images are byte-identical to UERC public subjects 0001–0100** (712 train, 178 val, 110 test). The Swin-V2 model was trained on UERC train/val, so **its AWE results (EER 2.65 %) are in-domain and not a generalisation result.** ITW, UBEAR and NITJ have no overlap with UERC (checked by exact bytes and a 16×16 average hash).
+- **Training recipe** (`uerc26_Model_training_(single_phase).ipynb`): colour-only augmentation (ColorJitter, RandomGrayscale 0.2, CLAHE, sharpening). There is **no geometric augmentation** (no rotation, perspective, scale or crop), which fits UBEAR's pose failure.
+- **NITJ split CSV:** 459 subjects in train/val and 51 test-only subjects, the same scheme as UERC.
+- **Mean-centring:** lowers EER in all 16 model × dataset rows. Its only negatives are CRR changes of 0.1 point or less (1 AWE probe, 4 UBEAR probes), which is noise.
+- **Brainstorm and plan:** in the chat answer of this date. Its points: clean subject-disjoint test splits first, UBEAR training data sampled by subject and video sequence, a domain-balanced mix, and partial versus full fine-tuning. **Nothing has been retrained yet**; waiting for the user's decision.

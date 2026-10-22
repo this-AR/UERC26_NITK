@@ -178,3 +178,8 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
 - **ITW:** `itw_dataset.zip` holds only the same 197-subject test set, so locally ITW is test-only.
 - **HPC:** `172.16.0.77` timed out (laptop now on `172.31.99.243`, likely off the campus network or VPN), and the ngrok tunnel was refused. Nothing was running there.
 - **Next:** waiting for the user to pick from §6 of the plan. The first suggested step is to freeze the split CSVs, then run zero-shot baselines.
+
+## 2026-10-22 · 14. Decision: training happens on the HPC only
+- All training (items 5, 6 and 7) will run on the HPC (H100, borrowed through `~/friend-gpu/run.sh`). The local RTX 4060 is used only for evaluation and analysis, and for preparing training code and split files.
+- **Local preparation possible now:** frozen split CSVs, the fair UBEAR measures, zero-shot baselines, Swin-V2 t-SNE and failure analysis, and the training scripts.
+- **Blocked:** the HPC is unreachable until the laptop is back on the campus network or VPN. The GPU is borrowed only after the user says go.

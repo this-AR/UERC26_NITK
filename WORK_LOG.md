@@ -168,3 +168,13 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
 - **NITJ split CSV:** 459 subjects in train/val and 51 test-only subjects, the same scheme as UERC.
 - **Mean-centring:** lowers EER in all 16 model × dataset rows. Its only negatives are CRR changes of 0.1 point or less (1 AWE probe, 4 UBEAR probes), which is noise.
 - **Brainstorm and plan:** in the chat answer of this date. Its points: clean subject-disjoint test splits first, UBEAR training data sampled by subject and video sequence, a domain-balanced mix, and partial versus full fine-tuning. **Nothing has been retrained yet**; waiting for the user's decision.
+
+## 2026-10-22 · 13. Analysis results saved; HPC unreachable
+- **Saved:**
+  - `results/analysis/findings_and_plan.md`: inferences, mistakes to avoid, data plan, next steps for items 5/6/7, and what can run locally vs. on the HPC.
+  - `results/analysis/data_overlap.txt`: AWE fully inside UERC26 public; ITW, UBEAR and NITJ clean.
+  - `experiments/data_overlap_check.py`: reusable leakage check.
+  - `ear_eval/config.py`: new `UERC_PUBLIC_DIR`.
+- **ITW:** `itw_dataset.zip` holds only the same 197-subject test set, so locally ITW is test-only.
+- **HPC:** `172.16.0.77` timed out (laptop now on `172.31.99.243`, likely off the campus network or VPN), and the ngrok tunnel was refused. Nothing was running there.
+- **Next:** waiting for the user to pick from §6 of the plan. The first suggested step is to freeze the split CSVs, then run zero-shot baselines.

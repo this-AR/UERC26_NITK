@@ -16,6 +16,7 @@ ITW_DIR = PROJECT_DIR / 'ITW' / 'ITW_230_split_augment'
 ITW_TEST_DIR = ITW_DIR / 'test'
 UBEAR_DIR = PROJECT_DIR / 'cropped_img'
 NITJ_DIR = PROJECT_DIR / 'NITJ_Cropped' / 'Cropped'
+UERC_PUBLIC_DIR = PROJECT_DIR / 'UERC26_data' / 'data' / 'public'  # training data of the Swin-V2 model
 
 # Models
 TINYVIT_DIR = ITW_DIR  # holds model.py (architecture) next to the weights

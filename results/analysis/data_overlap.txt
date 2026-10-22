@@ -1,0 +1,10 @@
+UERC26 public images hashed: 248655
+
+AWE: 1000 images | exact byte matches: 1000 | near-identical: 1000 | UERC subjects hit: 100
+    awe/001/01.png == 0001/01.png
+    awe/001/02.png == 0001/02.png
+    awe/001/03.png == 0001/03.png
+    UERC split of the matches: {'train': 712, 'val': 178, 'test': 110}
+ITW: 1175 images | exact byte matches: 0 | near-identical: 0 | UERC subjects hit: 0
+UBEAR: 4412 images | exact byte matches: 0 | near-identical: 0 | UERC subjects hit: 0
+NITJ: 10200 images | exact byte matches: 0 | near-identical: 0 | UERC subjects hit: 0

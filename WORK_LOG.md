@@ -203,3 +203,14 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
   - Every split covers all 5 poses. 15 of the 21 session-2 subjects are in the test set.
 - **Checks:** the script asserts that no test subject appears in train or val within any dataset, and that every listed file exists.
 - **Next:** write the HPC training script, then copy the tar over once the HPC is reachable.
+
+## 2026-10-22 · 16. Training plan agreed
+- **Plan:** `training/PLAN.md`.
+  - **Dropped:** TinyViT re-distillation.
+  - **Kept:**
+    - B1/B2: zero-shot baselines, Swin-V2 and DINOv3.
+    - **F1/F2:** fine-tune the trained Swin-V2 on UBEAR only, and on UBEAR + the other datasets.
+    - **R1/R2:** full retrain on all training data, Swin-V2 and DINOv3.
+    - **L1/L2:** LoRA, Swin-V2 and DINOv3.
+- **Shared settings:** AdaFace, subject+side classes, geometric augmentation added, a 60/20/20 UERC/NITJ/UBEAR mix, bf16 within the 22 GB budget. Every model is evaluated with the same pipeline on the frozen test splits.
+- **Open:** the DINOv3 variant and weights; whether item 6 (TinyViT on 30% of UBEAR) is still wanted.

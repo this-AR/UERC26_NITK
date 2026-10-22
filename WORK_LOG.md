@@ -183,3 +183,23 @@ A running history of the work in `C:\Users\hp\Downloads\ITW`. A new entry is add
 - All training (items 5, 6 and 7) will run on the HPC (H100, borrowed through `~/friend-gpu/run.sh`). The local RTX 4060 is used only for evaluation and analysis, and for preparing training code and split files.
 - **Local preparation possible now:** frozen split CSVs, the fair UBEAR measures, zero-shot baselines, Swin-V2 t-SNE and failure analysis, and the training scripts.
 - **Blocked:** the HPC is unreachable until the laptop is back on the campus network or VPN. The GPU is borrowed only after the user says go.
+
+## 2026-10-22 · 15. Frozen training/test splits and the HPC data package
+- **Code:**
+  - `training/make_splits.py` → `splits/manifest.csv` (264,552 rows, one per image) and `splits/README.md`, seed 42.
+  - `training/pack_for_hpc.py` → `hpc_package/ear_data.tar` (1.42 GB, git-ignored; paths inside match the manifest).
+- **Splits (images / subjects):**
+
+  | Dataset | Train | Val | Test |
+  |---|---|---|---|
+  | UERC | 179,172 / 1,179 | 44,804 / same subjects | 24,679 / 131 |
+  | NITJ | 7,344 / 459 (918 subject+side classes) | 1,836 / same subjects | 1,020 / 51 |
+  | UBEAR | 1,099 / 31 (62 classes) | 204 / 6 (subject-disjoint) | 3,109 / 89 |
+  | ITW | – | – | 1,175 / 197 |
+  | AWE | – | – | 110 / 11 (only the subjects in UERC's test split) |
+
+- **UBEAR:**
+  - 37 of 126 subjects (29%) are used for training, stratified by gender and session-2 capture. Train and val keep at most 5 evenly spaced frames per video; test keeps every frame.
+  - Every split covers all 5 poses. 15 of the 21 session-2 subjects are in the test set.
+- **Checks:** the script asserts that no test subject appears in train or val within any dataset, and that every listed file exists.
+- **Next:** write the HPC training script, then copy the tar over once the HPC is reachable.

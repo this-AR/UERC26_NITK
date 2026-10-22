@@ -30,6 +30,10 @@ ITW/ITW_230_split_augment/test/
 *.mat
 *.zip
 
+# Frozen splits are versioned; the HPC image bundle is not
+!splits/*.csv
+hpc_package/
+
 # Results: metrics and figures are versioned; pipeline scratch folders are not
 !results/**/*.png
 results/**/_work/
